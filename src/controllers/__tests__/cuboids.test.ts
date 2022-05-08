@@ -180,40 +180,52 @@ describe('cuboid update', () => {
     );
     await Cuboid.query().insert(
       factories.cuboid.build({
-        width: 5,
-        height: 5,
-        depth: 5,
+        width: 2,
+        height: 1,
+        depth: 2,
         bagId: bag.id,
       })
     );
     cuboid = await Cuboid.query().insert(
       factories.cuboid.build({
-        width: 4,
-        height: 4,
+        width: 1,
+        height: 2,
         depth: 4,
         bagId: bag.id,
       })
     );
   });
 
-  it('should succeed to update the cuboid', () => {
+  it('should succeed to update the cuboid', async () => {
     const [newWidth, newHeight, newDepth] = [5, 5, 5];
-    const response = { body: {} as Cuboid, status: HttpStatus.OK };
-    cuboid = response.body;
+    const cuboidId = cuboid.id;
+
+    const response = await request(server)
+      .put(urlJoin('/cuboids', cuboidId.toString()))
+      .send({
+        width: newWidth,
+        height: newHeight,
+        depth: newDepth,
+      });
 
     expect(response.status).toBe(HttpStatus.OK);
-    expect(cuboid.width).toBe(newWidth);
-    expect(cuboid.height).toBe(newHeight);
-    expect(cuboid.depth).toBe(newDepth);
-    expect(cuboid.bag?.id).toBe(bag.id);
+    expect(response.body.width).toBe(newWidth);
+    expect(response.body.height).toBe(newHeight);
+    expect(response.body.depth).toBe(newDepth);
+    expect(response.body.bagId).toBe(bag.id);
   });
 
-  it('should fail to update if insufficient capacity and return 422 status code', () => {
-    const [newWidth, newHeight, newDepth] = [6, 6, 6];
-    const response = {
-      body: {} as Cuboid,
-      status: HttpStatus.UNPROCESSABLE_ENTITY,
-    };
+  it('should fail to update if insufficient capacity and return 422 status code', async () => {
+    const [newWidth, newHeight, newDepth] = [7, 7, 8];
+    const cuboidId = cuboid.id;
+
+    const response = await request(server)
+      .put(urlJoin('/cuboids', cuboidId.toString()))
+      .send({
+        width: newWidth,
+        height: newHeight,
+        depth: newDepth,
+      });
 
     expect(response.status).toBe(HttpStatus.UNPROCESSABLE_ENTITY);
     expect(response.body.width).not.toBe(newWidth);
@@ -223,14 +235,40 @@ describe('cuboid update', () => {
 });
 
 describe('cuboid delete', () => {
-  it('should delete the cuboid', () => {
-    const response = { status: HttpStatus.OK };
+  let bag: Bag;
+  let cuboid: Cuboid;
+
+  beforeEach(async () => {
+    bag = await Bag.query().insert(
+      factories.bag.build({
+        volume: 250,
+        title: 'A bag',
+      })
+    );
+
+    cuboid = await Cuboid.query().insert(
+      factories.cuboid.build({
+        width: 4,
+        height: 4,
+        depth: 4,
+        bagId: bag.id,
+      })
+    );
+  });
+  it('should delete the cuboid', async () => {
+    const cuboidId = cuboid.id;
+    const response = await request(server).delete(
+      urlJoin('/cuboids', cuboidId.toString())
+    );
 
     expect(response.status).toBe(HttpStatus.OK);
   });
 
-  it('should not delete and return 404 status code when cuboids doesnt exists', () => {
-    const response = { status: HttpStatus.NOT_FOUND };
+  it('should not delete and return 404 status code when cuboids doesnt exists', async () => {
+    const cuboidId = 6890;
+    const response = await request(server).delete(
+      urlJoin('/cuboids', cuboidId.toString())
+    );
 
     expect(response.status).toBe(HttpStatus.NOT_FOUND);
   });
