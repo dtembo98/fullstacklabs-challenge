@@ -16,13 +16,16 @@ export class Bag extends Base {
     return {
       cuboids: {
         relation: Base.HasManyRelation,
-        modelClass: 'Cuboid',
+        modelClass: Cuboid,
         join: {
           from: 'bags.id',
           to: 'cuboids.bagId',
         },
       },
     };
+  }
+  $beforeInsert() {
+    this.availableVolume = this.volume;
   }
 }
 
