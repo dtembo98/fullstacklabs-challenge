@@ -232,6 +232,20 @@ describe('cuboid update', () => {
     expect(response.body.height).not.toBe(newHeight);
     expect(response.body.depth).not.toBe(newDepth);
   });
+  it('should return not-found because cupoid does not exists', async () => {
+    const [newWidth, newHeight, newDepth] = [7, 7, 8];
+    const cuboidId = 890;
+
+    const response = await request(server)
+      .put(urlJoin('/cuboids', cuboidId.toString()))
+      .send({
+        width: newWidth,
+        height: newHeight,
+        depth: newDepth,
+      });
+
+    expect(response.status).toBe(HttpStatus.NOT_FOUND);
+  });
 });
 
 describe('cuboid delete', () => {
